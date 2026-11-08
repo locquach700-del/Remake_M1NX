@@ -1,0 +1,53 @@
+name: Sign M1NX APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install tools
+        run: sudo apt-get install -y zipalign apksigner
+
+      - name: Download APK from release
+        run: |
+          gh release download v2 --repo locquach700-del/ff-esp-patch --dir .
+          ls -lh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Zipalign + Sign
+        run: |
+          zipalign -f 4 M1NX_white_esp_unsigned.apk M1NX_aligned.apk
+          keytool -genkey -v \
+            -keystore sign.keystore -alias m1nx \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass m1nx1234 -keypass m1nx1234 \
+            -dname "CN=M1NX,OU=M1NX,O=M1NX,L=HN,S=HN,C=VN"
+          apksigner sign \
+            --ks sign.keystore \
+            --ks-pass pass:m1nx1234 \
+            --key-pass pass:m1nx1234 \
+            --ks-key-alias m1nx \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled false \
+            --out M1NX_WHITE_ESP.apk \
+            M1NX_aligned.apk
+          ls -lh M1NX_WHITE_ESP.apk
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: M1NX_WHITE_ESP
+          path: M1NX_WHITE_ESP.apk
+          retention-days: 7
