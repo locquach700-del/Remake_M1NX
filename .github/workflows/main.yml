@@ -21,6 +21,7 @@ jobs:
       - name: Download APK from release
         run: |
           gh release download v2 --repo locquach700-del/ff-esp-patch --dir .
+          mv M1NX_unsigned.zip M1NX_white_esp_unsigned.apk
           ls -lh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
